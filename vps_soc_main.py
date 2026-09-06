@@ -97,25 +97,25 @@ def run_pipeline(log_path: str = None) -> None:
     print("\n" + "=" * 60)
 
     # Шаг 3: Анализ веб-логов (Nginx)
-    print("[3] Анализ веб-логов (Nginx):")
-    with open(nginx_log_path, "r") as f:
-        nginx_logs = f.readlines()
+    #print("[3] Анализ веб-логов (Nginx):")
+    #with open(nginx_log_path, "r") as f:
+    #    nginx_logs = f.readlines()
         
-    web_alerts_count = 0
-    print("    - Подозрительные веб-запросы:")
-    for line in nginx_logs:
+    #web_alerts_count = 0
+    #print("    - Подозрительные веб-запросы:")
+    #for line in nginx_logs:
         
-    is_suspicious = analyzer.detect_suspicious_paths(line)
+    #    is_suspicious = analyzer.detect_suspicious_paths(line)
         
-    if is_suspicious:
-            web_alerts_count += 1
-            parts = line.split('"')
-            request = parts[1] if len(parts) > 1 else line.strip()
-            ip = line.split()[0]
-            print(f"      [ALERT] {ip} запросил опасный путь: '{request}'")
+    #    if is_suspicious:
+    #        web_alerts_count += 1
+    #        parts = line.split()
+    #        request = parts[1] if len(parts) > 1 else line.strip()
+    #        ip = line.split()[0]
+    #        print(f"      [ALERT] {ip} запросил опасный путь: '{request}'")
             
-    print(f"    - Всего зафиксировано подозрительных веб-запросов: {web_alerts_count}")
-    print("-" * 60)
+    #print(f"    - Всего зафиксировано подозрительных веб-запросов: {web_alerts_count}")
+    #print("-" * 60)
 
     # Шаг 4: Расчет риска для VPS
     print("[4] Оценка уровня угрозы VPS (Risk Scoring):")
