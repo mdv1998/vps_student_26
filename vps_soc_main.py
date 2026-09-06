@@ -24,8 +24,7 @@ def run_pipeline(log_path: str = None) -> None:
     print("ЗАПУСК КОНВЕЙЕРА (PIPELINE) МИНИ-SOC НА VPS (СТУДЕНЧЕСКИЙ ШАБЛОН)")
     print("=" * 60)
 
-    # --- Шаг 1: Получение логов ---
-    # Проверяем, передан ли путь к файлу
+    #Шаг 1
     if log_path:
         print(f"[1] Чтение лог-файла: {log_path}")
         try:
@@ -33,7 +32,7 @@ def run_pipeline(log_path: str = None) -> None:
                 ssh_logs = f.readlines()
             print(f" - Прочитано строк: {len(ssh_logs)}")
             ssh_log_path = log_path
-            nginx_log_path = None
+            nginx_log_path = None  # Веб-логи не читаем
         except FileNotFoundError:
             print(f" [!] ОШИБКА: Файл {log_path} не найден!")
             return
