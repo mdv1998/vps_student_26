@@ -21,58 +21,80 @@ except ImportError:
 
 def run_pipeline(log_path: str = None) -> None:
     print("=" * 60)
-    print("ЗАПУСК КОНВЕЙЕРА (PIPELINE) МИНИ-SOC НА VPS")
+    print("ЗАПУСК КОНВЕЙЕРА (PIPELINE) МИНИ-SOC НА VPS (СТУДЕНЧЕСКИЙ ШАБЛОН)")
     print("=" * 60)
 
     if log_path:
-        print(f"[1] Чтение реального лог-файла: {log_path}")
+        print(f"[1] Чтение лог-файла: {log_path}")
         try:
             with open(log_path, 'r', encoding='utf-8') as f:
                 ssh_logs = f.readlines()
-            print(f" - Успешно прочитано строк: {len(ssh_logs)}")
+            print(f" - Прочитано строк: {len(ssh_logs)}")
             ssh_log_path = log_path
-            nginx_log_path = None 
+            nginx_log_path = None  # Веб-логи не читаем
         except FileNotFoundError:
-            print(f" [!] ОШИБКА: Файл {log_path} не найден! Убедитесь, что путь правильный.")
+            print(f" [!] ОШИБКА: Файл {log_path} не найден!")
             return
         except Exception as e:
-            print(f" [!] Ошибка при чтении файла: {e}")
+            print(f" [!] ОШИБКА при чтении: {e}")
             return
     else:
-        print("[1] Симуляция: Создаем искусственные логи для теста...")
-        ssh_logs = []
-        ssh_log_path = "mock_auth.log"
-        nginx_log_path = None
-        print(" - (Тестовый режим)")
+        print("[1] Симуляция: Создаем искусственные логи на сервере...")
+        mock_ssh_lines = generate_mock_ssh_logs(num_lines=100)
+        mock_nginx_lines = generate_mock_nginx_logs(num_lines=50)
 
-    print("-" * 60)
-    print("[2] Анализ SSH логов (Brute-Force):")
+
+        ssh_log_path = "mock_auth.log"
+        nginx_log_path = "mock_nginx_access.log"
+
+        with open(ssh_log_path, "w") as f:
+            f.writelines([line + "\n" for line in mock_ssh_lines])
+        with open(nginx_log_path, "w") as f:
+            f.writelines([line + "\n" for line in mock_nginx_lines])
+
+        ssh_logs = mock_ssh_lines
+        
+        print(f" - Сгенерировано строк SSH: {len(mock_ssh_lines)} (сохранено в {ssh_log_path})")
+        print(f" - Сгенерировано строк Nginx: {len(mock_nginx_lines)} (сохранено в {nginx_log_path})")
     
+    print("-" * 60)
+
+    # Шаг 2: Анализ логов SSH (Брутфорс)
+    print("[2] Анализ SSH логов:")
+    with open(ssh_log_path, "r") as f:
+        ssh_logs = f.readlines()
+        
     ip_attempts = analyzer.group_by_ip(ssh_logs)
     
-    print(f" - Всего уникальных IP: {len(ip_attempts)}")
-    for ip, count in sorted(ip_attempts.items(), key=lambda x: x[1], reverse=True)[:5]:
-        print(f"   * {ip}: {count} попыток")
-
+    print(f"    - Всего уникальных IP, совершивших неудачный вход: {len(ip_attempts)}")
+    for ip, count in sorted(ip_attempts.items(), key=lambda x: x[1], reverse=True)[:3]:
+        print(f"      * IP: {ip} - {count} неудачных попыток")
+        
     bf_alerts = analyzer.detect_brute_force(ip_attempts, threshold=5)
-    print(f" - Обнаружено брутфорс-атак (>= 5 попыток): {len(bf_alerts)}")
+    
+    print(f"    - ОБНАРУЖЕНО БРУТФОРС-АТАК (>= 5 попыток): {len(bf_alerts)}")
     for ip in bf_alerts:
-        print(f"   [ALERT] IP {ip} превысил порог!")
+        print(f"      [ALERT] IP {ip} превысил порог и заблокирован в SOC!")
+    print("-" * 60)
 
+#результаты
     print("\n" + "=" * 60)
-    print("ИТОГОВЫЙ ОТЧЕТ ПО АНАЛИЗУ ЛОГОВ")
+    print("итоговый отчет по анализу логов")
     print("=" * 60)
-    print(f"Обработано строк: {len(ssh_logs)}")
-    print(f"Уникальных IP: {len(ip_attempts)}")
-    print(f"Брутфорс-атак: {len(bf_alerts)}")
+    
+    print(f"\nобщая статистика:")
+    print(f"  - Обработано строк: {len(ssh_logs)}")
+    print(f"  - Уникальных IP: {len(ip_attempts)}")
+    print(f"  - Брутфорс-атак: {len(bf_alerts)}")
+    
     if bf_alerts:
-        print("\nСписок IP для блокировки:")
-        for ip in bf_alerts:
+        print(f"\nСписок IP для блокировки (>= 5 попыток):")
+        for ip in sorted(bf_alerts):
             print(f"  - {ip}: {ip_attempts[ip]} попыток")
     else:
-        print("\nПодозрительных IP не обнаружено.")
-    print("=" * 60)
-    print("КОНВЕЙЕР ЗАВЕРШИЛ РАБОту.")
+        print(f"\nПодозрительных IP не обнаружено.")
+    
+    print("\n" + "=" * 60)
 
     # Шаг 3: Анализ веб-логов (Nginx)
     #print("[3] Анализ веб-логов (Nginx):")
@@ -116,7 +138,6 @@ def run_pipeline(log_path: str = None) -> None:
     hash_original = "None" # Заглушка
     print(f"    - Хеш-сумма файла {dummy_config} (SHA-256): {hash_original}")
     
-    # Симулируем несанкционированное изменение (взлом)
     with open(dummy_config, "a") as f:
         f.write("PermitRootLogin yes # ХАКЕР ИЗМЕНИЛ НАСТРОЙКУ!\n")
         
@@ -131,7 +152,6 @@ def run_pipeline(log_path: str = None) -> None:
         print("    - [OK] Файл конфигурации не изменен.")
     print("-" * 60)
 
-    # Шаг 6: Проверка доступности портов на VPS (Тестируем локально)
     print("[6] Сетевая разведка (Тестовый сканер портов):")
     ports_to_scan = [22, 80, 443, 8080]
     print(f"    - Сканируем порты на localhost (127.0.0.1): {ports_to_scan}")
@@ -144,7 +164,6 @@ def run_pipeline(log_path: str = None) -> None:
         print(f"      * Порт {port}: {status}")
     print("-" * 60)
 
-    # Очистка временных файлов (Уже реализовано)
     for file in [ssh_log_path, nginx_log_path, dummy_config]:
         if os.path.exists(file):
             os.remove(file)
