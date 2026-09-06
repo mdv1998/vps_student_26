@@ -24,7 +24,6 @@ def run_pipeline(log_path: str = None) -> None:
     print("ЗАПУСК КОНВЕЙЕРА (PIPELINE) МИНИ-SOC НА VPS (СТУДЕНЧЕСКИЙ ШАБЛОН)")
     print("=" * 60)
 
-    #Шаг 1
     if log_path:
         print(f"[1] Чтение лог-файла: {log_path}")
         try:
@@ -43,6 +42,7 @@ def run_pipeline(log_path: str = None) -> None:
         print("[1] Симуляция: Создаем искусственные логи на сервере...")
         mock_ssh_lines = generate_mock_ssh_logs(num_lines=100)
         mock_nginx_lines = generate_mock_nginx_logs(num_lines=50)
+
 
         ssh_log_path = "mock_auth.log"
         nginx_log_path = "mock_nginx_access.log"
