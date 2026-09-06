@@ -5,11 +5,12 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Импортируем симулятор генерации логов
-try:
-    from vps_log_generator import generate_mock_ssh_logs, generate_mock_nginx_logs
-except ImportError:
-    print("[!] Не найден файл vps_log_generator.py. Убедитесь, что он лежит в той же папке!")
-    sys.exit(1)
+
+def generate_mock_ssh_logs(num_lines=0):
+    return []
+
+def generate_mock_nginx_logs(num_lines=0):
+    return []
 
 # Импортируем студенческий модуль аналитики
 try:
