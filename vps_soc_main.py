@@ -65,7 +65,7 @@ def run_pipeline(log_path: str = None) -> None:
     with open(ssh_log_path, "r") as f:
         ssh_logs = f.readlines()
         
-    ip_attempts = analyzer.aggregate_attacks(ssh_logs)
+    ip_attempts = analyzer.group_by_ip(ssh_logs)
     
     print(f"    - Всего уникальных IP, совершивших неудачный вход: {len(ip_attempts)}")
     for ip, count in sorted(ip_attempts.items(), key=lambda x: x[1], reverse=True)[:3]:
