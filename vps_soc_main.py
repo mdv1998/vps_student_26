@@ -21,80 +21,58 @@ except ImportError:
 
 def run_pipeline(log_path: str = None) -> None:
     print("=" * 60)
-    print("ЗАПУСК КОНВЕЙЕРА (PIPELINE) МИНИ-SOC НА VPS (СТУДЕНЧЕСКИЙ ШАБЛОН)")
+    print("ЗАПУСК КОНВЕЙЕРА (PIPELINE) МИНИ-SOC НА VPS")
     print("=" * 60)
 
     if log_path:
-        print(f"[1] Чтение лог-файла: {log_path}")
+        print(f"[1] Чтение реального лог-файла: {log_path}")
         try:
             with open(log_path, 'r', encoding='utf-8') as f:
                 ssh_logs = f.readlines()
-            print(f" - Прочитано строк: {len(ssh_logs)}")
+            print(f" - Успешно прочитано строк: {len(ssh_logs)}")
             ssh_log_path = log_path
-            nginx_log_path = None  # Веб-логи не читаем
+            nginx_log_path = None 
         except FileNotFoundError:
-            print(f" [!] ОШИБКА: Файл {log_path} не найден!")
+            print(f" [!] ОШИБКА: Файл {log_path} не найден! Убедитесь, что путь правильный.")
             return
         except Exception as e:
-            print(f" [!] ОШИБКА при чтении: {e}")
+            print(f" [!] Ошибка при чтении файла: {e}")
             return
     else:
-        print("[1] Симуляция: Создаем искусственные логи на сервере...")
-        mock_ssh_lines = generate_mock_ssh_logs(num_lines=100)
-        mock_nginx_lines = generate_mock_nginx_logs(num_lines=50)
-
-
+        print("[1] Симуляция: Создаем искусственные логи для теста...")
+        ssh_logs = []
         ssh_log_path = "mock_auth.log"
-        nginx_log_path = "mock_nginx_access.log"
+        nginx_log_path = None
+        print(" - (Тестовый режим)")
 
-        with open(ssh_log_path, "w") as f:
-            f.writelines([line + "\n" for line in mock_ssh_lines])
-        with open(nginx_log_path, "w") as f:
-            f.writelines([line + "\n" for line in mock_nginx_lines])
-
-        ssh_logs = mock_ssh_lines
-        
-        print(f" - Сгенерировано строк SSH: {len(mock_ssh_lines)} (сохранено в {ssh_log_path})")
-        print(f" - Сгенерировано строк Nginx: {len(mock_nginx_lines)} (сохранено в {nginx_log_path})")
-    
     print("-" * 60)
-
-    # Шаг 2: Анализ логов SSH (Брутфорс)
-    print("[2] Анализ SSH логов:")
-    with open(ssh_log_path, "r") as f:
-        ssh_logs = f.readlines()
-        
+    print("[2] Анализ SSH логов (Brute-Force):")
+    
     ip_attempts = analyzer.group_by_ip(ssh_logs)
     
-    print(f"    - Всего уникальных IP, совершивших неудачный вход: {len(ip_attempts)}")
-    for ip, count in sorted(ip_attempts.items(), key=lambda x: x[1], reverse=True)[:3]:
-        print(f"      * IP: {ip} - {count} неудачных попыток")
-        
-    bf_alerts = analyzer.detect_brute_force(ip_attempts, threshold=5)
-    
-    print(f"    - ОБНАРУЖЕНО БРУТФОРС-АТАК (>= 5 попыток): {len(bf_alerts)}")
-    for ip in bf_alerts:
-        print(f"      [ALERT] IP {ip} превысил порог и заблокирован в SOC!")
-    print("-" * 60)
+    print(f" - Всего уникальных IP: {len(ip_attempts)}")
+    for ip, count in sorted(ip_attempts.items(), key=lambda x: x[1], reverse=True)[:5]:
+        print(f"   * {ip}: {count} попыток")
 
-#результаты
+    bf_alerts = analyzer.detect_brute_force(ip_attempts, threshold=5)
+    print(f" - Обнаружено брутфорс-атак (>= 5 попыток): {len(bf_alerts)}")
+    for ip in bf_alerts:
+        print(f"   [ALERT] IP {ip} превысил порог!")
+
     print("\n" + "=" * 60)
-    print("итоговый отчет по анализу логов")
+    print("ИТОГОВЫЙ ОТЧЕТ ПО АНАЛИЗУ ЛОГОВ")
     print("=" * 60)
-    
-    print(f"\nобщая статистика:")
-    print(f"  - Обработано строк: {len(ssh_logs)}")
-    print(f"  - Уникальных IP: {len(ip_attempts)}")
-    print(f"  - Брутфорс-атак: {len(bf_alerts)}")
-    
+    print(f"Обработано строк: {len(ssh_logs)}")
+    print(f"Уникальных IP: {len(ip_attempts)}")
+    print(f"Брутфорс-атак: {len(bf_alerts)}")
     if bf_alerts:
-        print(f"\nСписок IP для блокировки (>= 5 попыток):")
-        for ip in sorted(bf_alerts):
+        print("\nСписок IP для блокировки:")
+        for ip in bf_alerts:
             print(f"  - {ip}: {ip_attempts[ip]} попыток")
     else:
-        print(f"\nПодозрительных IP не обнаружено.")
-    
-    print("\n" + "=" * 60)
+        print("\nПодозрительных IP не обнаружено.")
+    print("=" * 60)
+    print("КОНВЕЙЕР ЗАВЕРШИЛ РАБОту.")
 
     # Шаг 3: Анализ веб-логов (Nginx)
     #print("[3] Анализ веб-логов (Nginx):")
