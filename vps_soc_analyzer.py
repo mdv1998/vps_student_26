@@ -11,11 +11,17 @@ def extract_ip(log_line: str) -> str | None:
     # 1. Проверьте, содержит ли строка 'Failed password'
     # 2. Используйте регулярное выражение для поиска IPv4-адреса после 'from'
     # 3. Верните найденный IP-адрес или None
-    pass
+import re
 
-def group_by_ip(log_lines: list[str]) -> dict[str, int]:
-    """
-    Кейс 2: Группировка атак по IP (Агрегация через dict).
+def extract_ip(log_line: str) -> str | None:
+	if not any(keyword in log_line for keyword in ["Failed", "invalid", "authentication failure"]):
+		return None
+	match = re.search(r'\b(?:\d{1,3}\.){3}\d{1,3}\b', log_line)
+	if match:
+		return match.group(0)
+	return None
+""" Кейc: Группировка атак по 
+	    IP (Агрегация через dict).
     Подсчитывает общее число неудачных попыток входа для каждого IP-адреса.
     """
     # TODO: Напишите код функции
@@ -24,7 +30,13 @@ def group_by_ip(log_lines: list[str]) -> dict[str, int]:
     # 3. Извлеките IP-адрес из каждой строки с помощью функции extract_ip
     # 4. Если IP найден, обновите счетчик в словаре
     # 5. Верните полученный словарь
-    pass
+def group_by_ip(log_lines: list) -> dict:
+	counts = {}
+	for line in log_lines:
+		ip=extract_ip(line)
+		if ip:
+			counts[ip] = counts.get(ip,0) + 1
+	return counts
 
 def detect_brute_force(ip_counts: dict[str, int], threshold: int = 5) -> list[str]:
     """
@@ -35,7 +47,12 @@ def detect_brute_force(ip_counts: dict[str, int], threshold: int = 5) -> list[st
     # 1. Проанализируйте переданный словарь ip_counts
     # 2. Выберите все IP, у которых количество попыток больше или равно threshold
     # 3. Верните список этих IP-адресов
-    pass
+def detect_brute_force(ip_counts: dict[str, int], threshold: int = 5) -> list[str]:
+	suspicious_ips = []
+	for ip, count in ip_counts.items():
+		if count >= threshold:
+			suspicious_ips.append(ip)
+	return suspicious_ips
 
 def detect_suspicious_paths(log_line: str) -> bool:
     """
@@ -47,7 +64,20 @@ def detect_suspicious_paths(log_line: str) -> bool:
     # 2. Приведите строку лога к нижнему регистру
     # 3. Проверьте, содержится ли хотя бы одна сигнатура в строке
     # 4. Верните True, если сигнатура найдена, иначе False
-    pass
+def detect_suspicious_paths(log_line: str) -> bool:
+	signatures = [
+		"/etc/passwd",
+		".env",
+		"wp-admin",
+		"select+union",
+		"union+select",
+		"shell.php"
+	]
+	line_lower = log_line.lower()
+	for sig in signatures:
+		if sig in line_lower:
+			return True
+	return False
 
 def calculate_risk_score(brute_force_alerts: int, web_alerts: int) -> str:
     """
@@ -59,8 +89,14 @@ def calculate_risk_score(brute_force_alerts: int, web_alerts: int) -> str:
     # 2. Если балл равен 0 -> верните "LOW"
     # 3. Если балл меньше 5 -> верните "MEDIUM"
     # 4. В остальных случаях -> верните "HIGH"
-    pass
-
+def calculate_risk_score(brute_force_alerts: int, web_alerts: int) -> str: 
+	score = brute_force_alerts * 3 + web_alerts * 1 
+	if score == 0:
+		return "LOW"
+	elif score <5:
+		return "MEDIUM"
+	else:
+		return "HIGH"
 def is_port_open(ip: str, port: int, timeout: float = 1.0) -> bool:
     """
     Кейс 6: Безопасный сканер сетевой доступности VPS.
@@ -72,17 +108,38 @@ def is_port_open(ip: str, port: int, timeout: float = 1.0) -> bool:
     # 3. Попробуйте подключиться к (ip, port) с помощью метода connect_ex
     # 4. Метод возвращает 0 при успешном подключении (порт открыт)
     # 5. Обработайте возможные исключения и верните результат (True/False)
-    pass
+import socket
+def is_port_open(ip: str, port: int, timeout: float = 1.0) -> bool:
+		try:
+			with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+				s.settimeout(10)
+				result = s.connect_ex((ip, port))
+				return result == 0 
+		except Exception:
+			return False
 
 def get_file_hash(filepath: str) -> str:
     """
     Кейс 7: Контроль целостности файлов на VPS (SHA-256).
     Вычисляет криптографический хеш файла для отслеживания изменений.
-    """
+	    """
     # TODO: Напишите код функции
     # 1. Используйте библиотеку hashlib (алгоритм sha256)
     # 2. Попробуйте открыть файл в режиме бинарного чтения 'rb'
     # 3. Прочитайте файл порциями (блоками) и обновите хеш
     # 4. Верните строковое представление хеша в шестнадцатеричном виде (hexdigest)
     # 5. Если файл не найден (FileNotFoundError), верните строку "FILE_NOT_FOUND"
-    pass
+import hashlib
+def get_file_hash(filepath: str) -> str:
+		try:
+			with open(filepath, 'rb') as f:
+				sha256_hash = hashlib.sha256()
+				for chunk in iter(lambda: f.read(4096), b''):
+					sha256_hash.update(chunk)
+				return sha256_hash.hexdigest()
+		except FileNotFoundError:
+			return "FILE_NOT_FOUND"
+
+
+
+
