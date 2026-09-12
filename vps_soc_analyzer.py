@@ -4,21 +4,31 @@ import hashlib
 
 def extract_ip(log_line: str) -> str | None:
     """
-    Извлекает IPv4-адрес из строки неудачной SSH-аутентификации.
-    Для успешных входов и некорректных строк возвращает None.
+    Кейс 1: Парсинг реальных логов VPS с регулярными выражениями (re).
+    Ищет IP-адрес в строке лога, сигнализирующей о неудачной попытке входа по SSH.
     """
+    # TODO: Напишите код функции
+    # 1. Проверьте, содержит ли строка 'Failed password'
+    # 2. Используйте регулярное выражение для поиска IPv4-адреса после 'from'
+    # 3. Верните найденный IP-адрес или None
     if "Failed password" in log_line or "Invalid user" in log_line:
         match = re.search(r'from\s+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', log_line)
         if match:
             return match.group(1)
-        return None
     return None
 
 def group_by_ip(log_lines: list[str]) -> dict[str, int]:
     """
-    Подсчитывает количество неудачных SSH-входов для каждого IP-адреса.
+    Кейс 2: Группировка атак по IP (Агрегация через dict).
+    Подсчитывает общее число неудачных попыток входа для каждого IP-адреса.
     """
-    attacks = {}
+    # TODO: Напишите код функции
+    # 1. Создайте пустой словарь для подсчета
+    # 2. Пройдите циклом по всем строкам логов
+    # 3. Извлеките IP-адрес из каждой строки с помощью функции extract_ip
+    # 4. Если IP найден, обновите счетчик в словаре
+    # 5. Верните полученный словарь
+    attacks: dict[str, int] = {}
     for line in log_lines:
         ip = extract_ip(line)
         if ip:
@@ -27,72 +37,90 @@ def group_by_ip(log_lines: list[str]) -> dict[str, int]:
 
 def detect_brute_force(ip_counts: dict[str, int], threshold: int = 5) -> list[str]:
     """
-    Возвращает IP-адреса, у которых количество неудачных входов
-    больше или равно заданному порогу.
+    Кейс 3: Детектор SSH Brute-Force.
+    Выявляет IP-адреса, количество неудачных входов которых превышает порог threshold.
     """
-    DANGEROUS = []
+    # TODO: Напишите код функции
+    # 1. Проанализируйте переданный словарь ip_counts
+    # 2. Выберите все IP, у которых количество попыток больше или равно threshold
+    # 3. Верните список этих IP-адресов
+    suspicious_ips: list[str] = []
     for ip, count in ip_counts.items():
         if count >= threshold:
-            DANGEROUS.append(ip)
-    return DANGEROUS
+            suspicious_ips.append(ip)
+    return suspicious_ips
 
 def detect_suspicious_paths(log_line: str) -> bool:
     """
-    Ищет известные сигнатуры подозрительных веб-запросов.
+    Кейс 4: Поиск сигнатур веб-атак в логах Nginx/Apache.
+    Проверяет, содержит ли веб-запрос известные сигнатуры угроз (LFI, раскрытие путей, инъекции).
     """
-    signatures = (
-        "/etc/passwd",
-        ".env",
-        "wp-admin",
-        "select+union",
-        "union+select",
-        "shell.php",
-    )
-
-    lowered = log_line.lower()
-    return any(signature in lowered for signature in signatures)
-
+    # TODO: Напишите код функции
+    # 1. Определите список сигнатур угроз: /etc/passwd, .env, wp-admin, select+union, union+select, shell.php
+    # 2. Приведите строку лога к нижнему регистру
+    # 3. Проверьте, содержится ли хотя бы одна сигнатура в строке
+    # 4. Верните True, если сигнатура найдена, иначе False
+    signatures = ["/etc/passwd", ".env", "wp-admin", "select+union", "union+select", "shell.php"]
+    line_lower = log_line.lower()
+    for signature in signatures:
+        if signature in line_lower:
+            return True
+    return False
 
 def calculate_risk_score(brute_force_alerts: int, web_alerts: int) -> str:
     """
-    Рассчитывает уровень риска:
-    brute-force алерт = 3 балла, web-алерт = 1 балл.
+    Кейс 5: Расчет условного уровня риска (Risk Scoring).
+    На основе количества сработавших алертов вычисляет общий уровень угрозы.
     """
-    score = brute_force_alerts * 3 + web_alerts
-
+    # TODO: Напишите код функции
+    # 1. Вычислите балл риска: каждая брутфорс-атака = 3 балла, каждый веб-алерт = 1 балл
+    # 2. Если балл равен 0 -> верните "LOW"
+    # 3. Если балл меньше 5 -> верните "MEDIUM"
+    # 4. В остальных случаях -> верните "HIGH"
+    score = brute_force_alerts * 3 + web_alerts * 1
     if score == 0:
         return "LOW"
-    if score < 5:
+    elif score < 5:
         return "MEDIUM"
-    return "HIGH"
+    else:
+        return "HIGH"
 
 def is_port_open(ip: str, port: int, timeout: float = 1.0) -> bool:
     """
-    Проверяет доступность TCP-порта.
+    Кейс 6: Безопасный сканер сетевой доступности VPS.
+    Проверяет, открыт ли конкретный порт на сервере по протоколу TCP.
     """
+    # TODO: Напишите код функции
+    # 1. Используйте модуль socket для создания TCP-сокета (AF_INET, SOCK_STREAM)
+    # 2. Установите таймаут подключения
+    # 3. Попробуйте подключиться к (ip, port) с помощью метода connect_ex
+    # 4. Метод возвращает 0 при успешном подключении (порт открыт)
+    # 5. Обработайте возможные исключения и верните результат (True/False)
     try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.settimeout(timeout)
-            return sock.connect_ex((ip, port)) == 0
-    except (OSError, ValueError, socket.error):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        result = sock.connect_ex((ip, port))
+        sock.close()
+        return result == 0
+    except socket.error:
         return False
-
 
 def get_file_hash(filepath: str) -> str:
     """
-    Возвращает SHA-256 файла либо FILE_NOT_FOUND, если файла нет.
-    Файл читается блоками, чтобы не загружать его целиком в память.
+    Кейс 7: Контроль целостности файлов на VPS (SHA-256).
+    Вычисляет криптографический хеш файла для отслеживания изменений.
     """
-    sha256 = hashlib.sha256()
-
+    # TODO: Напишите код функции
+    # 1. Используйте библиотеку hashlib (алгоритм sha256)
+    # 2. Попробуйте открыть файл в режиме бинарного чтения 'rb'
+    # 3. Прочитайте файл порциями (блоками) и обновите хеш
+    # 4. Верните строковое представление хеша в шестнадцатеричном виде (hexdigest)
+    # 5. Если файл не найден (FileNotFoundError), верните строку "FILE_NOT_FOUND"
     try:
-        with open(filepath, "rb") as file:
-            while True:
-                chunk = file.read(8192)
-                if not chunk:
-                    break
-                sha256.update(chunk)
+        sha256 = hashlib.sha256()
+        with open(filepath, 'rb') as f:
+            for block in iter(lambda: f.read(4096), b""):
+                sha256.update(block)
+        return sha256.hexdigest()
     except FileNotFoundError:
         return "FILE_NOT_FOUND"
-
-    return sha256.hexdigest()
