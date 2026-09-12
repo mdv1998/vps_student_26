@@ -2,7 +2,6 @@ import re
 import socket
 import hashlib
 
-
 def extract_ip(log_line: str) -> str | None:
     """
     Извлекает IPv4-адрес из строки неудачной SSH-аутентификации.

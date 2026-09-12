@@ -1,6 +1,7 @@
 import unittest
 import sys
 import os
+
 # Добавляем текущую директорию в пути импорта Python
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
