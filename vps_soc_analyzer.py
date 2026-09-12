@@ -67,7 +67,6 @@ def calculate_risk_score(brute_force_alerts: int, web_alerts: int) -> str:
         return "MEDIUM"
     return "HIGH"
 
-
 def is_port_open(ip: str, port: int, timeout: float = 1.0) -> bool:
     """
     Проверяет доступность TCP-порта.
