@@ -12,7 +12,7 @@ def aggregate_attacks(log_lines: list[str]) -> dict[str, int]:
     """Считает количество атак для каждого IP-адреса."""
     attacks: dict[str, int] = {}
     for line in log_lines:
-        ip = extract_ip(line)
+        ip: str | None = extract_ip(line)
         if ip:
             attacks[ip] = attacks.get(ip, 0) + 1
     return attacks
